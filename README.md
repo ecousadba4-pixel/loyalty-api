@@ -110,6 +110,114 @@ npm start
 3. Настройте обратный прокси (например, Amvera/Cloud или Nginx) с HTTPS и проксированием к порту приложения.
 4. Добавьте health-check на `/health` и настраиваемые алерты по логам ошибок.
 
+### Развёртывание на VPS (systemd)
+
+Если вы запускаете сервис на VPS и используете `systemd`, ниже — минимальные шаги и примеры файлов для безопасного деплоя.
+
+1) Подготовьте окружение и зависимости (на VPS):
+
+```bash
+# Установите Node.js 18 (или используйте nvm)
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs build-essential git
+
+# Перейдите в папку приложения и установите зависимости
+cd /path/to/loyalty-api
+npm ci --omit=dev
+```
+
+2) Хранение переменных окружения
+
+Создайте `/etc/default/loyalty-api` (не храните секреты в репо):
+
+```ini
+# /etc/default/loyalty-api
+NODE_ENV=production
+PORT=3000
+DATABASE_URL="postgres://user:pass@db-host:5432/dbname"
+PASSWORD_HASH="<sha256-hash>"
+COOKIE_SECRET="replace_with_strong_secret"
+ALLOWED_ORIGINS="https://usadba4.ru,https://admin.usadba4.ru"
+LOG_LEVEL=info
+```
+
+3) Пример `systemd` unit (создайте `/etc/systemd/system/loyalty-api.service`):
+
+```ini
+[Unit]
+Description=Loyalty API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/loyalty-api
+EnvironmentFile=/etc/default/loyalty-api
+ExecStart=/usr/bin/node /path/to/loyalty-api/server.js
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+```
+
+После создания юнита выполните:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable loyalty-api
+sudo systemctl start loyalty-api
+sudo systemctl status loyalty-api
+sudo journalctl -u loyalty-api -f
+```
+
+4) Простой `deploy.sh` для быстрого обновления (разместите в репо, не храните в нём секреты):
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_DIR="/path/to/loyalty-api"
+cd "$REPO_DIR"
+
+echo "Pulling latest changes..."
+git fetch --all
+git reset --hard origin/main
+
+echo "Installing dependencies..."
+NODE_ENV=production npm ci --omit=dev
+
+echo "Restarting service..."
+sudo systemctl restart loyalty-api
+
+echo "Done. Tail logs:"
+sudo journalctl -u loyalty-api -n 200 --no-pager
+```
+
+Сделайте скрипт исполняемым: `chmod +x deploy.sh` и запускайте от пользователя с правами на рестарт сервиса.
+
+5) Откат
+
+Перед обновлением можно сохранить текущий коммит: `git rev-parse --short HEAD > /var/tmp/loyalty-prev`.
+Чтобы откатиться:
+
+```bash
+PREV=$(cat /var/tmp/loyalty-prev)
+git reset --hard "$PREV"
+NODE_ENV=production npm ci --omit=dev
+sudo systemctl restart loyalty-api
+```
+
+6) Рекомендации
+
+- Всегда тестируйте изменения локально, прежде чем пушить на прод.
+- Используйте `npm ci` с `package-lock.json` для детерминированных установок.
+- Регулярно запускайте `npm audit` локально и обновляйте зависимости в контролируемой среде.
+- Для zero-downtime развертываний используйте reverse-proxy (nginx) и стратегию blue/green или rolling-restart.
+
+
 ---
 
 ## 🗃 Структура базы данных
