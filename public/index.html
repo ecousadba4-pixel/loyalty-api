@@ -23,6 +23,13 @@
         <div id="auth-disabled-banner" class="info-banner hidden" role="status" aria-live="polite">
           🔓 Пароль временно отключен администратором. Форму можно заполнять сразу.
         </div>
+        <div class="yandex-checkbox-container">
+          <label class="checkbox-label">
+            <input type="checkbox" id="yandex_travel" class="checkbox-input" />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">Яндекс.Путешествия</span>
+          </label>
+        </div>
         <form id="checkout-form" novalidate>
           <section class="form-section">
             <h3 class="section-title">Контакты гостя</h3>
@@ -65,7 +72,7 @@
                 </div>
               </div>
             </div>
-            <div id="guest-info" class="info-summary hidden" aria-live="polite">
+            <div id="guest-info" class="info-summary hidden" aria-live="polite" data-yandex-hide="true">
               <div class="summary-card">
                 <span class="summary-label">Баланс</span>
                 <span id="balance-points" class="summary-value">0</span>
@@ -79,7 +86,7 @@
                 <span id="last-visit" class="summary-value">-</span>
               </div>
             </div>
-            <div id="new-guest-info" class="new-guest-block hidden" role="status">⚠️ Новый гость — добавьте его данные</div>
+            <div id="new-guest-info" class="new-guest-block hidden" role="status" data-yandex-hide="true">⚠️ Новый гость — добавьте его данные</div>
           </section>
 
           <section class="form-section">
@@ -103,7 +110,7 @@
                 <label for="checkin_date">Дата заезда:</label>
                 <input type="date" id="checkin_date" class="form-input" data-requires-phone="true" />
               </div>
-              <div class="form-group">
+              <div class="form-group" data-yandex-hide="true">
                 <label for="loyalty_level">Уровень лояльности:</label>
                 <input id="loyalty_level" class="form-input" readonly data-requires-phone="true" />
               </div>
@@ -115,7 +122,7 @@
                 <label for="total_amount">Сумма при выезде (до вычета баллов):</label>
                 <input id="total_amount" class="form-input" type="number" min="0" step="0.01" data-requires-phone="true" />
               </div>
-              <div class="form-group">
+              <div class="form-group" data-yandex-hide="true">
                 <label for="bonus_spent">Сумма списанных ранее накопленных баллов:</label>
                 <input id="bonus_spent" class="form-input" type="number" min="0" step="1" data-requires-phone="true" />
               </div>

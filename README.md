@@ -233,10 +233,14 @@ CREATE TABLE IF NOT EXISTS guests (
   checkin_date DATE NOT NULL,
   loyalty_level VARCHAR(80),
   shelter_booking_id VARCHAR(80) NOT NULL,
-  total_amount NUMERIC(12, 2) NOT NULL,
+  total_amount NUMERIC(12, 2) DEFAULT 0,
   bonus_spent INTEGER DEFAULT 0,
+  is_yandex_travel BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Миграция для существующей таблицы (добавить колонку is_yandex_travel):
+-- ALTER TABLE guests ADD COLUMN IF NOT EXISTS is_yandex_travel BOOLEAN DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS bonuses_balance (
   id SERIAL PRIMARY KEY,

@@ -232,7 +232,9 @@ async function initFlexbeApp() {
   const dateField = D('checkin_date');
   const loyaltyField = D('loyalty_level');
   const form = D('checkout-form');
+  const yandexCheckbox = D('yandex_travel');
   let phoneMaskApplied = false;
+  let isYandexMode = false;
 
   const hideMessage = () => {
     if (!msg) return;
@@ -275,6 +277,21 @@ async function initFlexbeApp() {
 
   const defaultWrongText = (wrong?.textContent || 'Неверный пароль!').trim();
   const phoneErrorDefaultText = (phoneError?.textContent || '⚠️ Неверный формат номера').trim();
+
+  const toggleYandexMode = (enabled) => {
+    isYandexMode = enabled;
+    if (enabled) {
+      form?.classList.add('yandex-mode');
+    } else {
+      form?.classList.remove('yandex-mode');
+    }
+  };
+
+  if (yandexCheckbox) {
+    yandexCheckbox.addEventListener('change', (e) => {
+      toggleYandexMode(e.target.checked);
+    });
+  }
 
   const showPasswordError = (text) => {
     if (!wrong) return;
@@ -569,9 +586,11 @@ async function initFlexbeApp() {
       return;
     }
     if (!bookingVal) {
-      showMessage('error', 'Номер бронирования Shelter обязателен');
+      showMessage('error', 'Номер бронирования обязателен');
       return;
     }
+    
+    // Проверяем сумму при выезде в обоих режимах
     if (!Number.isFinite(amountVal) || amountVal <= 0) {
       showMessage('error', 'Сумма при выезде должна быть больше 0');
       return;
@@ -586,11 +605,16 @@ async function initFlexbeApp() {
       last_name: lastNameVal,
       first_name: firstNameVal,
       checkin_date: formatDateForBackend(displayStr),
-      loyalty_level: loyaltyField.value,
       shelter_booking_id: bookingVal,
       total_amount: amountVal,
-      bonus_spent: parseFloat(bonusEl?.value || '0') || 0
+      is_yandex_travel: isYandexMode
     };
+
+    // В режиме Яндекс.Путешествия не отправляем loyalty_level и bonus_spent
+    if (!isYandexMode) {
+      data.loyalty_level = loyaltyField.value;
+      data.bonus_spent = parseFloat(bonusEl?.value || '0') || 0;
+    }
 
     setLoading(true);
     try {
@@ -635,6 +659,11 @@ async function initFlexbeApp() {
     if (dateField) {
       dateField.value = getDateMinusTwoDaysYMD();
       dateField.dispatchEvent(new Event('input'));
+    }
+    // Сбрасываем чекбокс Яндекс.Путешествия
+    if (yandexCheckbox) {
+      yandexCheckbox.checked = false;
+      toggleYandexMode(false);
     }
     loyaltyField.value = '1 СЕЗОН';
     loyaltyField.setAttribute('readonly', 'readonly');

@@ -13,9 +13,11 @@ router.post('/', async (req, res) => {
       loyalty_level,
       shelter_booking_id,
       total_amount,
-      bonus_spent
+      bonus_spent,
+      is_yandex_travel
     } = req.body;
 
+    // Проверяем обязательные поля (одинаково для обоих режимов)
     if (!guest_phone || !last_name || !first_name || !shelter_booking_id || !total_amount) {
       return respondWithValidationError(
         res,
@@ -59,6 +61,7 @@ router.post('/', async (req, res) => {
       return respondWithValidationError(res, 'Дата заезда не распознана.');
     }
 
+    // Валидация суммы при выезде (обязательна в обоих режимах)
     const amount = Number.parseFloat(total_amount);
     if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) {
       return respondWithValidationError(
@@ -67,29 +70,37 @@ router.post('/', async (req, res) => {
       );
     }
 
-    const bonusValueRaw = Number.parseInt(bonus_spent, 10);
-    const bonusValue = Number.isFinite(bonusValueRaw) && bonusValueRaw > 0 ? bonusValueRaw : 0;
-    if (bonusValue > 1_000_000) {
-      return respondWithValidationError(res, 'Списанные баллы не могут превышать 1 000 000.');
+    // Для Яндекс.Путешествия bonus_spent = 0
+    let bonusValue = 0;
+    if (!is_yandex_travel) {
+      const bonusValueRaw = Number.parseInt(bonus_spent, 10);
+      bonusValue = Number.isFinite(bonusValueRaw) && bonusValueRaw > 0 ? bonusValueRaw : 0;
+      if (bonusValue > 1_000_000) {
+        return respondWithValidationError(res, 'Списанные баллы не могут превышать 1 000 000.');
+      }
     }
 
     const query = `
       INSERT INTO guests
       (guest_phone, last_name, first_name, checkin_date, loyalty_level,
-       shelter_booking_id, total_amount, bonus_spent)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       shelter_booking_id, total_amount, bonus_spent, is_yandex_travel)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `;
+
+    // Для Яндекс.Путешествия loyalty_level будет null или '-'
+    const loyaltyValue = is_yandex_travel ? '-' : (loyaltySanitized || null);
 
     const values = [
       phoneToStore,
       lastNameSanitized,
       firstNameSanitized,
       normalizedDate,
-      loyaltySanitized || null,
+      loyaltyValue,
       bookingSanitized,
       amount,
-      bonusValue
+      bonusValue,
+      Boolean(is_yandex_travel)
     ];
 
     const result = await db.query(query, values);
