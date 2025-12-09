@@ -8,7 +8,7 @@ const util = require('util');
 
 const app = express();
 
-// ✅ Централизованный импорт конфига (ИСПРАВЛЕНО)
+// ✅ Централизованный импорт конфига
 const {
   PORT,
   RATE_LIMIT_WINDOW,
@@ -26,7 +26,10 @@ const {
 } = require('./config');
 
 const db = require('./db');
-const metrics = require('./metrics');
+
+// ✅ ВАЖНО: корректный импорт middleware, А НЕ объекта
+const { metricsMiddleware } = require('./metrics');
+
 const authRouter = require('./routes/auth');
 const guestsRouter = require('./routes/guests');
 
@@ -52,7 +55,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
 
-// ✅ Rate Limit (ИСПРАВЛЕНО)
+// ✅ Rate Limit
 const apiRateLimiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW,
   max: RATE_LIMIT_MAX,
@@ -62,7 +65,7 @@ const apiRateLimiter = rateLimit({
 
 app.use(apiRateLimiter);
 
-// ✅ CORS (через config.js)
+// ✅ CORS
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -78,7 +81,7 @@ app.use(
   })
 );
 
-// ✅ Логирование входящих запросов (если нужно)
+// ✅ Логирование запросов
 if (IS_DEBUG_LOGGING_ENABLED) {
   app.use((req, res, next) => {
     console.log(
@@ -97,8 +100,8 @@ if (STATIC_DIR) {
 app.use('/auth', authRouter);
 app.use('/guests', guestsRouter);
 
-// ✅ Метрики Prometheus
-app.get('/metrics', metrics);
+// ✅ Метрики Prometheus — ИСПРАВЛЕНО ✅
+app.get('/metrics', metricsMiddleware);
 
 // ✅ Healthcheck
 app.get('/health', async (req, res) => {
@@ -180,5 +183,3 @@ const setupGracefulShutdown = () => {
 };
 
 setupGracefulShutdown();
-
-
