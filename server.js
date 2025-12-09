@@ -27,7 +27,6 @@ const {
 
 const db = require('./db');
 
-/* ✅ ПРАВИЛЬНЫЙ ИМПОРТ METRICS ПО НОВОЙ СХЕМЕ */
 const {
   requestDurationMiddleware,
   metricsHandler
@@ -52,7 +51,6 @@ if (!AUTH_DISABLED && !PASSWORD_HASH) {
 
 /* ================== MIDDLEWARE ================== */
 
-// Для корректной работы за nginx
 app.set('trust proxy', 1);
 
 app.use(helmet());
@@ -60,7 +58,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
 
-/* ✅ PROMETHEUS MIDDLEWARE — ДО ВСЕХ РОУТОВ */
+/* ✅ PROMETHEUS MIDDLEWARE */
 app.use(requestDurationMiddleware);
 
 /* ================== RATE LIMIT ================== */
@@ -108,10 +106,10 @@ if (STATIC_DIR) {
 app.use('/auth', authRouter);
 app.use('/guests', guestsRouter);
 
-/* ✅ PROMETHEUS ENDPOINT */
+/* ✅ METRICS */
 app.get('/metrics', metricsHandler);
 
-/* ================== HEALTH CHECK ================== */
+/* ================== HEALTH ================== */
 
 app.get('/health', async (req, res) => {
   try {
@@ -154,47 +152,24 @@ const server = app.listen(PORT, () => {
   console.log(`📍 Allowed origins: ${UNIQUE_ALLOWED_ORIGINS.join(', ')}`);
 });
 
-/* ================== GRACEFUL SHUTDOWN (ИСПРАВЛЕНО) ================== */
+/* ================== GRACEFUL SHUTDOWN ================== */
 
-const setupGracefulShutdown = () => {
-  const shutdown = async (signal, error) => {
-    console.log(`⚠️ Сигнал ${signal}. Остановка сервера...`);
+const shutdown = async (signal) => {
+  console.log(`⚠️ Сигнал ${signal}. Остановка сервера...`);
 
-    if (error) console.error(error);
+  server.close(async () => {
+    console.log('✅ HTTP сервер остановлен');
 
-    server.close(async () => {
-      console.log('✅ HTTP сервер остановлен');
+    try {
+      await db.disconnect();
+      console.log('✅ База данных отключена');
+    } catch (e) {
+      console.error('❌ Ошибка отключения БД:', e);
+    }
 
-      try {
-        if (typeof db.disconnect === 'function') {
-          await db.disconnect();
-          console.log('✅ База данных отключена');
-        } else {
-          console.log('ℹ️ db.disconnect() не реализован — пропускаем');
-        }
-      } catch (e) {
-        console.error('❌ Ошибка отключения БД:', e);
-      }
-
-      process.exit(0);
-    });
-
-    setTimeout(() => {
-      console.error('❌ Принудительное завершение');
-      process.exit(1);
-    }, 10000);
-  };
-
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
-
-  process.on('unhandledRejection', (reason) => {
-    shutdown('unhandledRejection', reason);
-  });
-
-  process.on('uncaughtException', (error) => {
-    shutdown('uncaughtException', error);
+    process.exit(0);
   });
 };
 
-setupGracefulShutdown();
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
