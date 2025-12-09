@@ -25,7 +25,7 @@ const {
 
 /* ================== MODULES ================== */
 
-const db = require('./db');
+const db = require('./db/index');
 
 const {
   requestDurationMiddleware,
@@ -173,3 +173,4 @@ const shutdown = async (signal) => {
 
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
+
