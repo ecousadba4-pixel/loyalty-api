@@ -27,19 +27,11 @@ const {
 
 const db = require('./db');
 
-/**
- * ✅ Универсальный импорт metrics (работает при ЛЮБОМ export)
- */
-const metricsModule = require('./metrics');
-const metricsMiddleware =
-  typeof metricsModule === 'function'
-    ? metricsModule
-    : metricsModule.metricsMiddleware;
-
-if (typeof metricsMiddleware !== 'function') {
-  console.error('❌ metricsMiddleware не является функцией. Проверь exports в ./metrics.js');
-  process.exit(1);
-}
+// ✅ ПРАВИЛЬНЫЙ ИМПОРТ PROMETHEUS
+const {
+  requestDurationMiddleware,
+  metricsHandler
+} = require('./metrics');
 
 const authRouter = require('./routes/auth');
 const guestsRouter = require('./routes/guests');
@@ -47,7 +39,7 @@ const guestsRouter = require('./routes/guests');
 /* ================== CRITICAL CHECKS ================== */
 
 if (!DATABASE_URL) {
-  console.error('❌ Переменная DATABASE_URL не задана. Сервер остановлен.');
+  console.error('❌ Переменная окружения DATABASE_URL не задана. Сервер остановлен.');
   process.exit(1);
 }
 
@@ -67,6 +59,9 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
+
+// ✅ МЕТРИКИ: middleware ДО всех роутов
+app.use(requestDurationMiddleware);
 
 /* ================== RATE LIMIT ================== */
 
@@ -113,8 +108,8 @@ if (STATIC_DIR) {
 app.use('/auth', authRouter);
 app.use('/guests', guestsRouter);
 
-/* ✅ PROMETHEUS METRICS — ТЕПЕРЬ ГАРАНТИРОВАННО ФУНКЦИЯ */
-app.get('/metrics', metricsMiddleware);
+/* ✅ PROMETHEUS METRICS — ТЕПЕРЬ НАСТОЯЩИЙ HANDLER */
+app.get('/metrics', metricsHandler);
 
 /* ================== HEALTH CHECK ================== */
 
