@@ -154,7 +154,12 @@ const server = app.listen(PORT, () => {
 
 /* ================== GRACEFUL SHUTDOWN ================== */
 
+let isShuttingDown = false;
+
 const shutdown = async (signal) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
   console.log(`⚠️ Сигнал ${signal}. Остановка сервера...`);
 
   server.close(async () => {
@@ -173,4 +178,5 @@ const shutdown = async (signal) => {
 
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
+
 
