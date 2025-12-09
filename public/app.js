@@ -50,7 +50,7 @@ const resolveApiBase = () => {
 const API_BASE = resolveApiBase();
 const API = {
   AUTH: `${API_BASE}/auth`,
-  SEARCH: `${API_BASE}/guests/search`,
+  SEARCH: `${API_BASE}/bonuses/search`,
   ADD: `${API_BASE}/guests`,
   CONFIG: `${API_BASE}/config`
 };

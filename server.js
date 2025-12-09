@@ -34,6 +34,7 @@ const {
 
 const authRouter = require('./routes/auth');
 const guestsRouter = require('./routes/guests');
+const bonusesRouter = require('./routes/bonuses');
 
 /* ================== CRITICAL CHECKS ================== */
 
@@ -105,6 +106,12 @@ if (STATIC_DIR) {
 
 app.use('/auth', authRouter);
 app.use('/guests', guestsRouter);
+app.use('/bonuses', bonusesRouter);
+
+/* ✅ CONFIG ENDPOINT */
+app.get('/config', (req, res) => {
+  res.json({ authDisabled: AUTH_DISABLED });
+});
 
 /* ✅ METRICS */
 app.get('/metrics', metricsHandler);
