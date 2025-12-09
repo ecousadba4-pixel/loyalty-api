@@ -27,7 +27,7 @@ const {
 
 const db = require('./db');
 
-// ✅ ПРАВИЛЬНЫЙ ИМПОРТ PROMETHEUS
+/* ✅ ПРАВИЛЬНЫЙ ИМПОРТ METRICS ПО НОВОЙ СХЕМЕ */
 const {
   requestDurationMiddleware,
   metricsHandler
@@ -39,7 +39,7 @@ const guestsRouter = require('./routes/guests');
 /* ================== CRITICAL CHECKS ================== */
 
 if (!DATABASE_URL) {
-  console.error('❌ Переменная окружения DATABASE_URL не задана. Сервер остановлен.');
+  console.error('❌ Переменная DATABASE_URL не задана. Сервер остановлен.');
   process.exit(1);
 }
 
@@ -60,7 +60,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
 
-// ✅ МЕТРИКИ: middleware ДО всех роутов
+/* ✅ PROMETHEUS MIDDLEWARE — ДО ВСЕХ РОУТОВ */
 app.use(requestDurationMiddleware);
 
 /* ================== RATE LIMIT ================== */
@@ -108,7 +108,7 @@ if (STATIC_DIR) {
 app.use('/auth', authRouter);
 app.use('/guests', guestsRouter);
 
-/* ✅ PROMETHEUS METRICS — ТЕПЕРЬ НАСТОЯЩИЙ HANDLER */
+/* ✅ PROMETHEUS ENDPOINT */
 app.get('/metrics', metricsHandler);
 
 /* ================== HEALTH CHECK ================== */
@@ -154,7 +154,7 @@ const server = app.listen(PORT, () => {
   console.log(`📍 Allowed origins: ${UNIQUE_ALLOWED_ORIGINS.join(', ')}`);
 });
 
-/* ================== GRACEFUL SHUTDOWN ================== */
+/* ================== GRACEFUL SHUTDOWN (ИСПРАВЛЕНО) ================== */
 
 const setupGracefulShutdown = () => {
   const shutdown = async (signal, error) => {
@@ -166,8 +166,12 @@ const setupGracefulShutdown = () => {
       console.log('✅ HTTP сервер остановлен');
 
       try {
-        await db.disconnect();
-        console.log('✅ База данных отключена');
+        if (typeof db.disconnect === 'function') {
+          await db.disconnect();
+          console.log('✅ База данных отключена');
+        } else {
+          console.log('ℹ️ db.disconnect() не реализован — пропускаем');
+        }
       } catch (e) {
         console.error('❌ Ошибка отключения БД:', e);
       }
