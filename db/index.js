@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const config = require('../config'); // ✅ ВОТ ЭТО КРИТИЧНО ВАЖНО
+const config = require('../config'); // ✅ важный правильный путь
 
 if (!config.DATABASE_URL) {
   console.error('❌ Переменная DATABASE_URL не задана. DB модуль не может инициализироваться.');
@@ -28,7 +28,12 @@ const healthCheck = async () => {
   await pool.query('SELECT 1');
 };
 
+// ✅ защита от повторного вызова pool.end()
+let isClosed = false;
+
 const disconnect = async () => {
+  if (isClosed) return;
+  isClosed = true;
   await pool.end();
 };
 
