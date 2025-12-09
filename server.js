@@ -98,7 +98,7 @@ app.use('/auth', authRouter);
 app.use('/guests', guestsRouter);
 
 // ✅ Метрики Prometheus
-app.get('/metrics', metrics.metricsMiddleware);
+app.get('/metrics', metrics);
 
 // ✅ Healthcheck
 app.get('/health', async (req, res) => {
@@ -180,4 +180,5 @@ const setupGracefulShutdown = () => {
 };
 
 setupGracefulShutdown();
+
 
