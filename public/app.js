@@ -49,10 +49,10 @@ const resolveApiBase = () => {
 
 const API_BASE = resolveApiBase();
 const API = {
-  AUTH: `${API_BASE}/api/auth`,
-  SEARCH: `${API_BASE}/api/bonuses/search`,
-  ADD: `${API_BASE}/api/guests`,
-  CONFIG: `${API_BASE}/api/config`
+  AUTH: `${API_BASE}/auth`,
+  SEARCH: `${API_BASE}/guests/search`,
+  ADD: `${API_BASE}/guests`,
+  CONFIG: `${API_BASE}/config`
 };
 
 const configState = {
