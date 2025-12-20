@@ -27,11 +27,6 @@ const {
 
 const db = require('./db/index');
 
-const {
-  requestDurationMiddleware,
-  metricsHandler
-} = require('./metrics');
-
 const authRouter = require('./routes/auth');
 const guestsRouter = require('./routes/guests');
 const bonusesRouter = require('./routes/bonuses');
@@ -58,9 +53,6 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
-
-/* ✅ PROMETHEUS MIDDLEWARE */
-app.use(requestDurationMiddleware);
 
 /* ================== RATE LIMIT ================== */
 
@@ -112,9 +104,6 @@ app.use('/bonuses', bonusesRouter);
 app.get('/config', (req, res) => {
   res.json({ authDisabled: AUTH_DISABLED });
 });
-
-/* ✅ METRICS */
-app.get('/metrics', metricsHandler);
 
 /* ================== HEALTH ================== */
 
